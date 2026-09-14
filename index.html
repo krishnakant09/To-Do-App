@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="TaskForge — A premium daily task management app to track your developer workflow, habits, and daily goals.">
+  <title>TaskForge — Daily Task Manager</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Confetti container -->
+  <div class="confetti-container" id="confettiContainer"></div>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- SVG Gradient Definition for Progress Ring -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#7c5cfc" />
+        <stop offset="100%" style="stop-color:#34d399" />
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <div class="app-container">
+
+    <!-- ===== Header ===== -->
+    <header class="app-header">
+      <div class="app-logo">
+        <div class="app-logo-icon">⚡</div>
+        <div>
+          <h1>TaskForge</h1>
+          <div class="subtitle">Crush your daily goals</div>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <nav class="date-nav" aria-label="Date navigation">
+          <button id="prevDate" title="Previous day" aria-label="Previous day">‹</button>
+          <span class="current-date is-today" id="currentDate">Today</span>
+          <button id="nextDate" title="Next day" aria-label="Next day">›</button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ===== Stats Bar ===== -->
+    <section class="stats-bar" aria-label="Statistics">
+
+      <!-- Progress Card -->
+      <div class="stat-card progress-card">
+        <div class="stat-info">
+          <div class="stat-header">
+            <span class="stat-label">Daily Progress</span>
+          </div>
+          <div class="stat-value" id="progressPct">0%</div>
+          <div class="stat-sub" id="progressText">0/0 done</div>
+        </div>
+        <div class="progress-ring-container">
+          <svg class="progress-ring" viewBox="0 0 72 72">
+            <circle class="progress-ring-bg" cx="36" cy="36" r="30"></circle>
+            <circle class="progress-ring-fill" id="progressRingFill" cx="36" cy="36" r="30"></circle>
+          </svg>
+          <div class="progress-ring-text">📊</div>
+        </div>
+      </div>
+
+      <!-- Streak Card -->
+      <div class="stat-card streak-card">
+        <div class="stat-header">
+          <span class="stat-label">Current Streak</span>
+          <span class="stat-icon streak-flame">🔥</span>
+        </div>
+        <div class="stat-value" id="streakValue">0</div>
+        <div class="stat-sub" id="streakSub">Complete all tasks to start</div>
+      </div>
+
+      <!-- Total Card -->
+      <div class="stat-card total-card">
+        <div class="stat-header">
+          <span class="stat-label">Today's Tasks</span>
+          <span class="stat-icon">📋</span>
+        </div>
+        <div class="stat-value" id="totalValue">0</div>
+        <div class="stat-sub" id="totalSub">0 completed, 0 remaining</div>
+      </div>
+
+    </section>
+
+    <!-- ===== Category Filters ===== -->
+    <div class="category-filter" role="tablist" aria-label="Filter tasks by category">
+      <button class="filter-btn active" data-category="all" role="tab" aria-selected="true">
+        📋 All <span class="filter-count">0</span>
+      </button>
+      <button class="filter-btn" data-category="dev" role="tab" aria-selected="false">
+        🔧 Dev Work <span class="filter-count">0</span>
+      </button>
+      <button class="filter-btn" data-category="cloud" role="tab" aria-selected="false">
+        ☁️ Cloud <span class="filter-count">0</span>
+      </button>
+      <button class="filter-btn" data-category="learning" role="tab" aria-selected="false">
+        📚 Learning <span class="filter-count">0</span>
+      </button>
+      <button class="filter-btn" data-category="editing" role="tab" aria-selected="false">
+        ✏️ Editing <span class="filter-count">0</span>
+      </button>
+      <button class="filter-btn" data-category="general" role="tab" aria-selected="false">
+        📌 General <span class="filter-count">0</span>
+      </button>
+    </div>
+
+    <!-- ===== Add Task ===== -->
+    <section class="add-task-section" aria-label="Add a new task">
+      <div class="add-task-bar">
+        <div class="add-task-input-group">
+          <input
+            type="text"
+            id="taskInput"
+            class="add-task-input"
+            placeholder="What do you need to accomplish today?"
+            maxlength="200"
+            autocomplete="off"
+          >
+          <div class="add-task-options">
+            <div class="select-wrapper">
+              <select id="categorySelect" class="task-select" aria-label="Task category">
+                <option value="general">📌 General</option>
+                <option value="dev">🔧 Dev Work</option>
+                <option value="cloud">☁️ Cloud</option>
+                <option value="learning">📚 Learning</option>
+                <option value="editing">✏️ Editing</option>
+              </select>
+            </div>
+            <div class="select-wrapper">
+              <select id="prioritySelect" class="task-select" aria-label="Task priority">
+                <option value="medium">● Medium</option>
+                <option value="high">● High</option>
+                <option value="low">● Low</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <button id="addTaskBtn" class="add-task-btn" aria-label="Add task">
+          <span>＋</span> Add Task
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== Task List ===== -->
+    <section aria-label="Task list">
+      <div class="task-list-header">
+        <span class="task-list-title">Tasks</span>
+        <div class="task-list-actions">
+          <button class="task-list-action-btn" id="clearCompleted">Clear Completed</button>
+        </div>
+      </div>
+      <div class="task-list" id="taskList" role="list">
+        <!-- Tasks rendered by JS -->
+      </div>
+    </section>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
