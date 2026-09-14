@@ -39,6 +39,10 @@
       </div>
 
       <div class="header-right">
+        <button id="historyBtn" class="history-btn" aria-label="View history & past progress" title="View past progress history">
+          <span class="history-btn-icon">📈</span>
+          <span class="history-btn-text">History</span>
+        </button>
         <nav class="date-nav" aria-label="Date navigation">
           <button id="prevDate" title="Previous day" aria-label="Previous day">‹</button>
           <span class="current-date is-today" id="currentDate">Today</span>
@@ -163,7 +167,85 @@
     </section>
 
   </div>
+ 
+   <!-- ===== History & Progress Modal ===== -->
+   <div class="modal-overlay" id="historyModalOverlay" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle">
+     <div class="modal history-modal" id="historyModal">
+       <!-- Header -->
+       <div class="modal-header">
+         <div class="modal-title-group">
+           <div class="modal-icon-badge">📈</div>
+           <div>
+             <h2 id="historyModalTitle">Progress History</h2>
+             <p class="modal-subtitle">Review previous days, completion rates, and habit streaks</p>
+           </div>
+         </div>
+         <button class="modal-close-btn" id="closeHistoryBtn" aria-label="Close history modal" title="Close">✕</button>
+       </div>
 
-  <script src="app.js"></script>
+       <!-- Body -->
+       <div class="modal-body history-modal-body">
+         <!-- KPI Summary Grid -->
+         <div class="history-summary-grid">
+           <div class="history-stat-card">
+             <span class="history-stat-label">Days Tracked</span>
+             <span class="history-stat-val" id="historyDaysTracked">0</span>
+             <span class="history-stat-desc">Active days</span>
+           </div>
+           <div class="history-stat-card">
+             <span class="history-stat-label">Avg Completion</span>
+             <span class="history-stat-val" id="historyAvgRate">0%</span>
+             <span class="history-stat-desc">All-time completion</span>
+           </div>
+           <div class="history-stat-card">
+             <span class="history-stat-label">Tasks Finished</span>
+             <span class="history-stat-val" id="historyTasksFinished">0</span>
+             <span class="history-stat-desc">Completed tasks</span>
+           </div>
+           <div class="history-stat-card">
+             <span class="history-stat-label">Streak Status</span>
+             <span class="history-stat-val" id="historyBestStreak">0 🔥</span>
+             <span class="history-stat-desc">Current streak</span>
+           </div>
+         </div>
+
+         <!-- Weekly 7-Day Activity Trend -->
+         <div class="history-section-header">
+           <span class="section-title">📊 Last 7 Days Activity</span>
+           <span class="section-subtitle">Daily completion visual</span>
+         </div>
+         <div class="weekly-chart" id="weeklyChart" aria-label="7 day activity chart">
+           <!-- Rendered by JS -->
+         </div>
+
+         <!-- Daily Log Header & Filters -->
+         <div class="history-toolbar">
+           <div class="history-section-header">
+             <span class="section-title">📅 Daily History Log</span>
+           </div>
+           <div class="history-filters" role="tablist" aria-label="Filter history days">
+             <button class="history-filter-btn active" data-hist-filter="all" role="tab" aria-selected="true">All Days</button>
+             <button class="history-filter-btn" data-hist-filter="completed" role="tab" aria-selected="false">100% Done</button>
+             <button class="history-filter-btn" data-hist-filter="pending" role="tab" aria-selected="false">Incomplete</button>
+           </div>
+         </div>
+
+         <!-- History Day-by-Day Cards -->
+         <div class="history-list" id="historyList" role="region" aria-label="Recorded days list">
+           <!-- Rendered by JS -->
+         </div>
+       </div>
+
+       <!-- Footer -->
+       <div class="modal-footer">
+         <button class="modal-btn" id="loadDemoBtn" title="Load sample past days to explore previous progress">
+           ✨ Load Demo History
+         </button>
+         <button class="modal-btn primary" id="closeHistoryFooterBtn">Done</button>
+       </div>
+     </div>
+   </div>
+
+   <script src="app.js"></script>
 </body>
 </html>

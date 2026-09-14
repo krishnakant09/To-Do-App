@@ -19,6 +19,7 @@ A premium, dark-themed personal task management app built to help you crush your
 | 🏷️ **Category Filters** | Organize tasks by Dev Work, Cloud, Learning, Editing, General |
 | ➕ **Quick Add** | Add tasks with category & priority in one click |
 | 📅 **Date Navigation** | Browse past and future days to review progress |
+| 📈 **History & Progress** | Track past performance, 7-day activity chart, and jump to any previous day |
 | 💾 **Persistent Storage** | All data saved to `localStorage` — survives refresh |
 | 📱 **Fully Responsive** | Works beautifully on desktop, tablet, and mobile |
 | 🌙 **Dark Glassmorphism UI** | Premium dark theme with blur effects & micro-animations |

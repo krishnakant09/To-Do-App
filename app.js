@@ -29,6 +29,7 @@ const PRIORITY_LABELS = {
 let state = {
   currentDate: getTodayString(),
   activeFilter: 'all',
+  activeHistoryFilter: 'all',
   tasks: {},       // keyed by date string -> array of tasks
   streakData: {},  // keyed by date string -> boolean (all completed?)
 };
@@ -358,6 +359,12 @@ function updateStats() {
   const allDone = total > 0 && tasks.every(t => t.completed);
   state.streakData[state.currentDate] = allDone;
   saveState();
+
+  // Update history modal if open
+  const histOverlay = document.getElementById('historyModalOverlay');
+  if (histOverlay && histOverlay.classList.contains('active')) {
+    updateHistoryModalContent();
+  }
 }
 
 function setActiveFilter(category) {
@@ -366,6 +373,289 @@ function setActiveFilter(category) {
     btn.classList.toggle('active', btn.dataset.category === category);
   });
   renderTasks();
+}
+
+// ===== History & Progress Overview =====
+function getAllRecordedDates() {
+  const dates = new Set(Object.keys(state.tasks).filter(d => (state.tasks[d] || []).length > 0));
+  if (state.currentDate) dates.add(state.currentDate);
+  return Array.from(dates).sort((a, b) => b.localeCompare(a));
+}
+
+function computeHistoryStats() {
+  const dates = getAllRecordedDates();
+  let totalTasks = 0;
+  let completedTasks = 0;
+
+  dates.forEach(dateStr => {
+    const list = state.tasks[dateStr] || [];
+    totalTasks += list.length;
+    completedTasks += list.filter(t => t.completed).length;
+  });
+
+  const avgRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const streak = calculateStreak();
+
+  return {
+    daysTracked: dates.length,
+    avgRate,
+    completedTasks,
+    streak,
+  };
+}
+
+function computeWeeklyActivity() {
+  const activity = [];
+  const today = new Date();
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr = formatDateString(d);
+    const tasks = state.tasks[dateStr] || [];
+    const completed = tasks.filter(t => t.completed).length;
+    const total = tasks.length;
+    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' });
+    const isToday = (dateStr === getTodayString());
+
+    activity.push({
+      dateStr,
+      dayLabel,
+      pct,
+      completed,
+      total,
+      isToday,
+      hasData: total > 0,
+    });
+  }
+
+  return activity;
+}
+
+function renderWeeklyChart() {
+  const container = document.getElementById('weeklyChart');
+  if (!container) return;
+
+  const weekData = computeWeeklyActivity();
+  container.innerHTML = weekData.map(d => {
+    const isComplete = d.hasData && d.pct === 100;
+    const isZero = d.pct === 0;
+    const height = d.hasData ? Math.max(d.pct, 8) : 4;
+    return `
+      <div class="weekly-col ${d.isToday ? 'is-today' : ''}" data-jump-date="${d.dateStr}" title="${d.dateStr}: ${d.completed}/${d.total} done (${d.pct}%) — Click to jump">
+        <span class="weekly-day-pct">${d.hasData ? `${d.pct}%` : '—'}</span>
+        <div class="weekly-bar-track">
+          <div class="weekly-bar-fill ${isComplete ? 'complete' : ''} ${isZero ? 'zero' : ''}" style="height: ${height}%;"></div>
+        </div>
+        <span class="weekly-day-label">${d.dayLabel}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderHistoryList(filter = 'all') {
+  const container = document.getElementById('historyList');
+  if (!container) return;
+
+  const dates = getAllRecordedDates();
+  let filtered = dates;
+
+  if (filter === 'completed') {
+    filtered = dates.filter(d => {
+      const list = state.tasks[d] || [];
+      return list.length > 0 && list.every(t => t.completed);
+    });
+  } else if (filter === 'pending') {
+    filtered = dates.filter(d => {
+      const list = state.tasks[d] || [];
+      return list.length === 0 || list.some(t => !t.completed);
+    });
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="history-empty">
+        <div class="history-empty-icon">📂</div>
+        <p><strong>No history records found</strong></p>
+        <p style="font-size: 0.8rem; margin-top: 4px;">
+          ${dates.length === 0 ? 'Start crushing tasks daily, or click "Load Demo History" below to preview!' : 'No days match the selected filter.'}
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(dateStr => {
+    const tasks = state.tasks[dateStr] || [];
+    const completed = tasks.filter(t => t.completed).length;
+    const total = tasks.length;
+    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const isCurrent = (dateStr === state.currentDate);
+
+    let badgeClass = 'none';
+    let badgeText = '0% done';
+    if (total > 0 && completed === total) {
+      badgeClass = 'complete';
+      badgeText = '✓ 100% Done';
+    } else if (completed > 0) {
+      badgeClass = 'partial';
+      badgeText = `${pct}% done`;
+    }
+
+    const displayTitle = formatDisplayDate(dateStr);
+    const parsed = parseDate(dateStr);
+    const fullDate = parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    return `
+      <div class="history-day-card" data-date="${dateStr}">
+        <div class="history-card-header">
+          <div class="history-date-info">
+            <span class="history-date-name ${isCurrent ? 'is-active-day' : ''}">
+              ${displayTitle} <span style="font-weight: 400; font-size: 0.78rem; color: var(--text-muted);">(${fullDate})</span>
+              ${isCurrent ? '<span style="font-size: 0.72rem; color: var(--accent-primary); font-weight: 700; margin-left: 4px;">● Active</span>' : ''}
+            </span>
+            <span class="history-status-badge ${badgeClass}">${badgeText}</span>
+          </div>
+          <div class="history-card-actions">
+            <button class="history-details-toggle" data-toggle-date="${dateStr}" aria-label="Toggle task details for ${dateStr}">
+              Details ▾
+            </button>
+            <button class="history-jump-btn" data-jump-date="${dateStr}" aria-label="Jump to ${dateStr}">
+              <span>View Day</span> →
+            </button>
+          </div>
+        </div>
+
+        <div class="history-progress-row">
+          <div class="history-progress-track">
+            <div class="history-progress-fill" style="width: ${pct}%;"></div>
+          </div>
+          <span class="history-progress-text">${completed}/${total} completed</span>
+        </div>
+
+        <div class="history-tasks-breakdown" id="breakdown-${dateStr}" style="display: none;">
+          ${tasks.length === 0 ? '<div style="font-size: 0.78rem; color: var(--text-muted);">No tasks recorded for this day.</div>' : tasks.map(t => `
+            <div class="history-task-item ${t.completed ? 'is-done' : ''}">
+              <span style="display: flex; align-items: center;">
+                <span class="hist-check">${t.completed ? '✓' : '○'}</span>
+                <span style="${t.completed ? 'text-decoration: line-through; opacity: 0.75;' : ''}">${escapeHtml(t.text)}</span>
+              </span>
+              <span class="task-category-badge cat-${t.category}" style="font-size: 0.68rem; padding: 2px 7px;">
+                ${CATEGORIES[t.category]?.icon || '📌'} ${CATEGORIES[t.category]?.label || 'General'}
+              </span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateHistoryModalContent() {
+  const stats = computeHistoryStats();
+  const daysEl = document.getElementById('historyDaysTracked');
+  const avgEl = document.getElementById('historyAvgRate');
+  const finishedEl = document.getElementById('historyTasksFinished');
+  const streakEl = document.getElementById('historyBestStreak');
+
+  if (daysEl) daysEl.textContent = stats.daysTracked;
+  if (avgEl) avgEl.textContent = `${stats.avgRate}%`;
+  if (finishedEl) finishedEl.textContent = stats.completedTasks;
+  if (streakEl) streakEl.textContent = `${stats.streak} 🔥`;
+
+  renderWeeklyChart();
+  renderHistoryList(state.activeHistoryFilter);
+}
+
+function openHistoryModal() {
+  const overlay = document.getElementById('historyModalOverlay');
+  if (!overlay) return;
+
+  updateHistoryModalContent();
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeHistoryModal() {
+  const overlay = document.getElementById('historyModalOverlay');
+  if (overlay) {
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+}
+
+function jumpToDate(dateStr) {
+  state.currentDate = dateStr;
+  ensureDailyHabits(state.currentDate);
+  renderDateNav();
+  renderTasks();
+  updateStats();
+  closeHistoryModal();
+  showToast('📅', `Switched to ${formatDisplayDate(dateStr)}`);
+}
+
+function toggleHistoryDetails(dateStr) {
+  const breakdown = document.getElementById(`breakdown-${dateStr}`);
+  const btn = document.querySelector(`[data-toggle-date="${dateStr}"]`);
+  if (!breakdown) return;
+
+  const isHidden = (breakdown.style.display === 'none' || !breakdown.style.display);
+  breakdown.style.display = isHidden ? 'flex' : 'none';
+  if (btn) {
+    btn.textContent = isHidden ? 'Details ▴' : 'Details ▾';
+  }
+}
+
+function loadDemoHistory() {
+  const today = new Date();
+
+  // Populate previous 5 days with realistic activity
+  const demoData = [
+    { offset: 1, habitDone: [true, true, true, true], extra: [{ text: 'Review PR #42 on GitHub', category: 'dev', priority: 'high', completed: true }] },
+    { offset: 2, habitDone: [true, true, true, false], extra: [{ text: 'Setup S3 bucket lifecycle policy', category: 'cloud', priority: 'medium', completed: true }] },
+    { offset: 3, habitDone: [true, true, true, true], extra: [{ text: 'Practice Dynamic Programming patterns', category: 'learning', priority: 'high', completed: true }] },
+    { offset: 4, habitDone: [true, false, true, false], extra: [{ text: 'Draft sprint notes & documentation', category: 'general', priority: 'low', completed: true }] },
+    { offset: 5, habitDone: [true, true, true, true], extra: [] },
+  ];
+
+  demoData.forEach(({ offset, habitDone, extra }) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - offset);
+    const dateStr = formatDateString(d);
+
+    if (!state.tasks[dateStr] || state.tasks[dateStr].length === 0) {
+      state.tasks[dateStr] = DAILY_HABITS.map((h, idx) => ({
+        id: generateId(),
+        text: h.text,
+        category: h.category,
+        priority: h.priority,
+        isHabit: true,
+        completed: habitDone[idx] ?? true,
+        createdAt: '09:00 AM',
+      }));
+
+      extra.forEach(ex => {
+        state.tasks[dateStr].push({
+          id: generateId(),
+          text: ex.text,
+          category: ex.category,
+          priority: ex.priority,
+          isHabit: false,
+          completed: ex.completed,
+          createdAt: '02:30 PM',
+        });
+      });
+    }
+
+    const allDone = state.tasks[dateStr].length > 0 && state.tasks[dateStr].every(t => t.completed);
+    state.streakData[dateStr] = allDone;
+  });
+
+  saveState();
+  updateHistoryModalContent();
+  updateStats();
+  showToast('✨', 'Demo history loaded successfully!');
 }
 
 // ===== UI Helpers =====
@@ -441,7 +731,7 @@ function init() {
   renderTasks();
   updateStats();
 
-  // Event listeners
+  // Event listeners - Tasks & Navigation
   document.getElementById('addTaskBtn').addEventListener('click', handleAddTask);
   document.getElementById('taskInput').addEventListener('keypress', handleKeyPress);
   document.getElementById('prevDate').addEventListener('click', () => navigateDate(-1));
@@ -453,6 +743,87 @@ function init() {
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', () => setActiveFilter(btn.dataset.category));
   });
+
+  // History button & modal events
+  const historyBtn = document.getElementById('historyBtn');
+  if (historyBtn) {
+    historyBtn.addEventListener('click', openHistoryModal);
+  }
+
+  const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+  if (closeHistoryBtn) {
+    closeHistoryBtn.addEventListener('click', closeHistoryModal);
+  }
+
+  const closeHistoryFooterBtn = document.getElementById('closeHistoryFooterBtn');
+  if (closeHistoryFooterBtn) {
+    closeHistoryFooterBtn.addEventListener('click', closeHistoryModal);
+  }
+
+  const historyOverlay = document.getElementById('historyModalOverlay');
+  if (historyOverlay) {
+    historyOverlay.addEventListener('click', (e) => {
+      if (e.target.id === 'historyModalOverlay') {
+        closeHistoryModal();
+      }
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeHistoryModal();
+    }
+  });
+
+  const loadDemoBtn = document.getElementById('loadDemoBtn');
+  if (loadDemoBtn) {
+    loadDemoBtn.addEventListener('click', loadDemoHistory);
+  }
+
+  // History filter tabs
+  document.querySelectorAll('.history-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.history-filter-btn').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      state.activeHistoryFilter = btn.dataset.histFilter;
+      renderHistoryList(state.activeHistoryFilter);
+    });
+  });
+
+  // History list event delegation (Jump & Toggle details)
+  const historyList = document.getElementById('historyList');
+  if (historyList) {
+    historyList.addEventListener('click', (e) => {
+      const jumpBtn = e.target.closest('.history-jump-btn');
+      if (jumpBtn) {
+        const date = jumpBtn.dataset.jumpDate;
+        if (date) jumpToDate(date);
+        return;
+      }
+
+      const toggleBtn = e.target.closest('.history-details-toggle');
+      if (toggleBtn) {
+        const date = toggleBtn.dataset.toggleDate;
+        if (date) toggleHistoryDetails(date);
+        return;
+      }
+    });
+  }
+
+  // Weekly chart click delegation (Jump to clicked date)
+  const weeklyChart = document.getElementById('weeklyChart');
+  if (weeklyChart) {
+    weeklyChart.addEventListener('click', (e) => {
+      const col = e.target.closest('.weekly-col');
+      if (col && col.dataset.jumpDate) {
+        jumpToDate(col.dataset.jumpDate);
+      }
+    });
+  }
 
   // Focus the input
   document.getElementById('taskInput').focus();
