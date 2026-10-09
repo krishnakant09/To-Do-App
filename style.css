@@ -1821,6 +1821,15 @@ body::after {
     gap: 4px;
     padding: 12px 6px 8px;
   }
+
+  .modal.habits-modal {
+    max-width: 95%;
+    max-height: 90vh;
+  }
+
+  .habit-actions {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1869,5 +1878,14 @@ body::after {
 
   .modal-footer button {
     width: 100%;
+  }
+
+  .habits-add-selects {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .habits-add-btn {
+    text-align: center;
   }
 }
