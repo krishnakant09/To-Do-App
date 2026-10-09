@@ -945,11 +945,6 @@ function init() {
     });
   }
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      closeHistoryModal();
-    }
-  });
 
   const loadDemoBtn = document.getElementById('loadDemoBtn');
   if (loadDemoBtn) {
