@@ -20,6 +20,7 @@ A premium, dark-themed personal task management app built to help you crush your
 | ➕ **Quick Add** | Add tasks with category & priority in one click |
 | 📅 **Date Navigation** | Browse past and future days to review progress |
 | 📈 **History & Progress** | Track past performance, 7-day activity chart, and jump to any previous day |
+| ⚙️ **Custom Habits Manager** | Add, toggle, delete, and reset your own recurring daily habits |
 | 💾 **Persistent Storage** | All data saved to `localStorage` — survives refresh |
 | 📱 **Fully Responsive** | Works beautifully on desktop, tablet, and mobile |
 | 🌙 **Dark Glassmorphism UI** | Premium dark theme with blur effects & micro-animations |
@@ -69,7 +70,7 @@ These tasks automatically populate each day to keep you on track:
 | 3 | 📚 Solve a DSA problem | Learning | High |
 | 4 | ✏️ Complete editing work | Editing | Medium |
 
-> You can add unlimited custom tasks on top of these!
+> These are the **defaults** — you can fully customize them via the ⚙️ **Habits** button! Add your own, toggle them on/off, or reset to defaults anytime.
 
 ---
 

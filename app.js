@@ -659,7 +659,7 @@ function loadDemoHistory() {
     const dateStr = formatDateString(d);
 
     if (!state.tasks[dateStr] || state.tasks[dateStr].length === 0) {
-      state.tasks[dateStr] = DAILY_HABITS.map((h, idx) => ({
+      state.tasks[dateStr] = DEFAULT_HABITS.map((h, idx) => ({
         id: generateId(),
         text: h.text,
         category: h.category,
