@@ -3,12 +3,15 @@
    ============================================= */
 
 // ===== Configuration =====
-const DAILY_HABITS = [
-  { text: 'Commit to GitHub repo', category: 'dev', priority: 'high', isHabit: true },
-  { text: 'Open & review AWS Cloud console', category: 'cloud', priority: 'high', isHabit: true },
-  { text: 'Solve a DSA problem', category: 'learning', priority: 'high', isHabit: true },
-  { text: 'Complete editing work', category: 'editing', priority: 'medium', isHabit: true },
+const DEFAULT_HABITS = [
+  { text: 'Commit to GitHub repo', category: 'dev', priority: 'high' },
+  { text: 'Open & review AWS Cloud console', category: 'cloud', priority: 'high' },
+  { text: 'Solve a DSA problem', category: 'learning', priority: 'high' },
+  { text: 'Complete editing work', category: 'editing', priority: 'medium' },
 ];
+
+// User-configurable habits (loaded from storage or defaults)
+let userHabits = loadUserHabits();
 
 const CATEGORIES = {
   all: { label: 'All', icon: '📋' },
@@ -102,6 +105,36 @@ function loadState() {
   }
 }
 
+function loadUserHabits() {
+  try {
+    const raw = localStorage.getItem('taskforge_habits');
+    if (raw) {
+      const habits = JSON.parse(raw);
+      if (Array.isArray(habits) && habits.length > 0) {
+        return habits;
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to load habits:', e);
+  }
+  // Return default habits with IDs and enabled flag
+  return DEFAULT_HABITS.map(h => ({
+    id: generateId(),
+    text: h.text,
+    category: h.category,
+    priority: h.priority,
+    enabled: true,
+  }));
+}
+
+function saveUserHabits() {
+  localStorage.setItem('taskforge_habits', JSON.stringify(userHabits));
+}
+
+function getUserHabits() {
+  return userHabits.filter(h => h.enabled);
+}
+
 // ===== Task Operations =====
 function getTasksForDate(dateStr) {
   return state.tasks[dateStr] || [];
@@ -114,8 +147,9 @@ function ensureDailyHabits(dateStr) {
 
   const tasks = state.tasks[dateStr];
   const existingHabits = tasks.filter(t => t.isHabit).map(t => t.text);
+  const activeHabits = getUserHabits();
 
-  DAILY_HABITS.forEach(habit => {
+  activeHabits.forEach(habit => {
     if (!existingHabits.includes(habit.text)) {
       tasks.unshift({
         id: generateId(),
@@ -658,6 +692,148 @@ function loadDemoHistory() {
   showToast('✨', 'Demo history loaded successfully!');
 }
 
+// ===== Habits Manager =====
+function openHabitsModal() {
+  const overlay = document.getElementById('habitsModalOverlay');
+  if (!overlay) return;
+  renderHabitsList();
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeHabitsModal() {
+  const overlay = document.getElementById('habitsModalOverlay');
+  if (overlay) {
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+}
+
+function renderHabitsList() {
+  const container = document.getElementById('habitsList');
+  const countEl = document.getElementById('habitsCount');
+  if (!container) return;
+
+  const enabledCount = userHabits.filter(h => h.enabled).length;
+  if (countEl) {
+    countEl.textContent = `${enabledCount} active / ${userHabits.length} total`;
+  }
+
+  if (userHabits.length === 0) {
+    container.innerHTML = `
+      <div class="habits-empty">
+        <div class="habits-empty-icon">🔁</div>
+        <h3>No habits configured</h3>
+        <p>Add your first daily habit above, or click "Reset to Defaults" below.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = userHabits.map((habit, index) => `
+    <div class="habit-item ${habit.enabled ? '' : 'disabled'}" data-habit-id="${habit.id}" role="listitem">
+      <span class="habit-drag-handle" title="Drag to reorder">⠿</span>
+      <div class="habit-content">
+        <div class="habit-text">${escapeHtml(habit.text)}</div>
+        <div class="habit-meta">
+          <span class="task-category-badge cat-${habit.category}" style="font-size: 0.68rem; padding: 2px 7px;">
+            ${CATEGORIES[habit.category]?.icon || '📌'} ${CATEGORIES[habit.category]?.label || 'General'}
+          </span>
+          <span class="task-priority ${habit.priority}" style="font-size: 0.68rem;">${PRIORITY_LABELS[habit.priority] || ''}</span>
+        </div>
+      </div>
+      <div class="habit-actions">
+        <div class="habit-toggle-indicator ${habit.enabled ? 'active' : ''}" data-toggle-habit="${habit.id}" title="${habit.enabled ? 'Disable habit' : 'Enable habit'}"></div>
+        <button class="habit-action-btn delete-btn" data-delete-habit="${habit.id}" title="Remove habit">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addUserHabit(text, category, priority) {
+  if (!text.trim()) return;
+
+  // Check for duplicate text
+  const exists = userHabits.some(h => h.text.toLowerCase() === text.trim().toLowerCase());
+  if (exists) {
+    showToast('⚠️', 'A habit with this name already exists');
+    return;
+  }
+
+  const habit = {
+    id: generateId(),
+    text: text.trim(),
+    category,
+    priority,
+    enabled: true,
+  };
+
+  userHabits.push(habit);
+  saveUserHabits();
+
+  // Add this new habit to today's task list immediately
+  ensureDailyHabits(state.currentDate);
+  renderTasks();
+  updateStats();
+  renderHabitsList();
+  showToast('✅', `New habit added: ${text.trim()}`);
+}
+
+function toggleUserHabit(habitId) {
+  const habit = userHabits.find(h => h.id === habitId);
+  if (!habit) return;
+
+  habit.enabled = !habit.enabled;
+  saveUserHabits();
+  renderHabitsList();
+  showToast(
+    habit.enabled ? '✅' : '⏸️',
+    `Habit ${habit.enabled ? 'enabled' : 'disabled'}: ${habit.text}`
+  );
+}
+
+function deleteUserHabit(habitId) {
+  const idx = userHabits.findIndex(h => h.id === habitId);
+  if (idx === -1) return;
+
+  const habitText = userHabits[idx].text;
+
+  // Animate out
+  const el = document.querySelector(`[data-habit-id="${habitId}"]`);
+  if (el) {
+    el.classList.add('removing');
+    setTimeout(() => {
+      userHabits.splice(idx, 1);
+      saveUserHabits();
+      renderHabitsList();
+    }, 300);
+  } else {
+    userHabits.splice(idx, 1);
+    saveUserHabits();
+    renderHabitsList();
+  }
+
+  showToast('🗑️', `Habit removed: ${habitText}`);
+}
+
+function resetHabitsToDefaults() {
+  userHabits = DEFAULT_HABITS.map(h => ({
+    id: generateId(),
+    text: h.text,
+    category: h.category,
+    priority: h.priority,
+    enabled: true,
+  }));
+  saveUserHabits();
+
+  // Re-populate today
+  ensureDailyHabits(state.currentDate);
+  renderTasks();
+  updateStats();
+  renderHabitsList();
+  showToast('🔄', 'Habits reset to defaults');
+}
+
 // ===== UI Helpers =====
 function escapeHtml(str) {
   const div = document.createElement('div');
@@ -825,8 +1001,98 @@ function init() {
     });
   }
 
+  // ===== Habits Modal Events =====
+  const habitsBtn = document.getElementById('habitsBtn');
+  if (habitsBtn) {
+    habitsBtn.addEventListener('click', openHabitsModal);
+  }
+
+  const closeHabitsBtn = document.getElementById('closeHabitsBtn');
+  if (closeHabitsBtn) {
+    closeHabitsBtn.addEventListener('click', closeHabitsModal);
+  }
+
+  const closeHabitsFooterBtn = document.getElementById('closeHabitsFooterBtn');
+  if (closeHabitsFooterBtn) {
+    closeHabitsFooterBtn.addEventListener('click', closeHabitsModal);
+  }
+
+  const habitsOverlay = document.getElementById('habitsModalOverlay');
+  if (habitsOverlay) {
+    habitsOverlay.addEventListener('click', (e) => {
+      if (e.target.id === 'habitsModalOverlay') {
+        closeHabitsModal();
+      }
+    });
+  }
+
+  // Add habit button & enter key
+  const addHabitBtn = document.getElementById('addHabitBtn');
+  if (addHabitBtn) {
+    addHabitBtn.addEventListener('click', () => {
+      const input = document.getElementById('habitInput');
+      const category = document.getElementById('habitCategorySelect').value;
+      const priority = document.getElementById('habitPrioritySelect').value;
+      if (input && input.value.trim()) {
+        addUserHabit(input.value, category, priority);
+        input.value = '';
+        input.focus();
+      }
+    });
+  }
+
+  const habitInput = document.getElementById('habitInput');
+  if (habitInput) {
+    habitInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const category = document.getElementById('habitCategorySelect').value;
+        const priority = document.getElementById('habitPrioritySelect').value;
+        if (habitInput.value.trim()) {
+          addUserHabit(habitInput.value, category, priority);
+          habitInput.value = '';
+          habitInput.focus();
+        }
+      }
+    });
+  }
+
+  // Reset habits button
+  const resetHabitsBtn = document.getElementById('resetHabitsBtn');
+  if (resetHabitsBtn) {
+    resetHabitsBtn.addEventListener('click', resetHabitsToDefaults);
+  }
+
+  // Habits list event delegation (toggle & delete)
+  const habitsList = document.getElementById('habitsList');
+  if (habitsList) {
+    habitsList.addEventListener('click', (e) => {
+      const toggleEl = e.target.closest('[data-toggle-habit]');
+      if (toggleEl) {
+        toggleUserHabit(toggleEl.dataset.toggleHabit);
+        return;
+      }
+
+      const deleteEl = e.target.closest('[data-delete-habit]');
+      if (deleteEl) {
+        deleteUserHabit(deleteEl.dataset.deleteHabit);
+        return;
+      }
+    });
+  }
+
+  // Update Escape key to also close habits modal
+  document.removeEventListener('keydown', handleEscape);
+  document.addEventListener('keydown', handleEscape);
+
   // Focus the input
   document.getElementById('taskInput').focus();
+}
+
+function handleEscape(e) {
+  if (e.key === 'Escape') {
+    closeHistoryModal();
+    closeHabitsModal();
+  }
 }
 
 // Start the app
