@@ -39,6 +39,10 @@
       </div>
 
       <div class="header-right">
+        <button id="habitsBtn" class="history-btn" aria-label="Manage daily habits" title="Manage your daily habits">
+          <span class="history-btn-icon">⚙️</span>
+          <span class="history-btn-text">Habits</span>
+        </button>
         <button id="historyBtn" class="history-btn" aria-label="View history & past progress" title="View past progress history">
           <span class="history-btn-icon">📈</span>
           <span class="history-btn-text">History</span>
@@ -242,6 +246,81 @@
            ✨ Load Demo History
          </button>
          <button class="modal-btn primary" id="closeHistoryFooterBtn">Done</button>
+       </div>
+     </div>
+   </div>
+
+   <!-- ===== Habits Manager Modal ===== -->
+   <div class="modal-overlay" id="habitsModalOverlay" role="dialog" aria-modal="true" aria-labelledby="habitsModalTitle">
+     <div class="modal habits-modal" id="habitsModal">
+       <!-- Header -->
+       <div class="modal-header">
+         <div class="modal-title-group">
+           <div class="modal-icon-badge habits-icon-badge">⚙️</div>
+           <div>
+             <h2 id="habitsModalTitle">Manage Daily Habits</h2>
+             <p class="modal-subtitle">Configure recurring tasks that auto-populate every day</p>
+           </div>
+         </div>
+         <button class="modal-close-btn" id="closeHabitsBtn" aria-label="Close habits modal" title="Close">✕</button>
+       </div>
+
+       <!-- Body -->
+       <div class="modal-body habits-modal-body">
+         <!-- Add new habit form -->
+         <div class="habits-add-form">
+           <div class="habits-add-header">
+             <span class="section-title">➕ Add New Habit</span>
+           </div>
+           <div class="habits-add-row">
+             <input
+               type="text"
+               id="habitInput"
+               class="habits-input"
+               placeholder="e.g., Read 30 mins of a tech book"
+               maxlength="200"
+               autocomplete="off"
+             >
+             <div class="habits-add-selects">
+               <div class="select-wrapper">
+                 <select id="habitCategorySelect" class="task-select" aria-label="Habit category">
+                   <option value="general">📌 General</option>
+                   <option value="dev">🔧 Dev Work</option>
+                   <option value="cloud">☁️ Cloud</option>
+                   <option value="learning">📚 Learning</option>
+                   <option value="editing">✏️ Editing</option>
+                 </select>
+               </div>
+               <div class="select-wrapper">
+                 <select id="habitPrioritySelect" class="task-select" aria-label="Habit priority">
+                   <option value="medium">● Medium</option>
+                   <option value="high">● High</option>
+                   <option value="low">● Low</option>
+                 </select>
+               </div>
+               <button id="addHabitBtn" class="habits-add-btn" aria-label="Add habit">＋ Add</button>
+             </div>
+           </div>
+         </div>
+
+         <!-- Habits list -->
+         <div class="habits-list-section">
+           <div class="habits-list-header">
+             <span class="section-title">🔁 Your Daily Habits</span>
+             <span class="habits-count" id="habitsCount">0 habits</span>
+           </div>
+           <div class="habits-list" id="habitsList" role="list">
+             <!-- Rendered by JS -->
+           </div>
+         </div>
+       </div>
+
+       <!-- Footer -->
+       <div class="modal-footer">
+         <button class="modal-btn" id="resetHabitsBtn" title="Reset habits to default set">
+           🔄 Reset to Defaults
+         </button>
+         <button class="modal-btn primary" id="closeHabitsFooterBtn">Done</button>
        </div>
      </div>
    </div>
