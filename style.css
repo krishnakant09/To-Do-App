@@ -1473,6 +1473,300 @@ body::after {
   color: #fff;
 }
 
+/* ===== Habits Manager Modal ===== */
+.modal.habits-modal {
+  max-width: 620px;
+  width: 100%;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(124, 92, 252, 0.18);
+}
+
+.habits-icon-badge {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.25), rgba(245, 158, 11, 0.25)) !important;
+  border: 1px solid rgba(251, 191, 36, 0.35) !important;
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.2) !important;
+}
+
+.habits-modal-body {
+  padding: 22px 24px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Add habit form */
+.habits-add-form {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+}
+
+.habits-add-header {
+  margin-bottom: 12px;
+}
+
+.habits-add-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.habits-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.88rem;
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+.habits-input::placeholder {
+  color: var(--text-muted);
+}
+
+.habits-input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-primary-glow);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.habits-add-selects {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.habits-add-btn {
+  padding: 8px 18px;
+  background: linear-gradient(135deg, var(--accent-primary), #6345e0);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+}
+
+.habits-add-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-glow);
+}
+
+.habits-add-btn:active {
+  transform: translateY(0);
+}
+
+/* Habits list */
+.habits-list-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.habits-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.habits-count {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  font-weight: 500;
+}
+
+.habits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Individual habit item */
+.habit-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-normal);
+  animation: taskSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.habit-item:hover {
+  border-color: var(--border-active);
+  background: var(--bg-card-hover);
+}
+
+.habit-item.disabled {
+  opacity: 0.45;
+}
+
+.habit-item.removing {
+  animation: taskSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Drag handle */
+.habit-drag-handle {
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: grab;
+  user-select: none;
+  opacity: 0.5;
+  transition: opacity var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.habit-drag-handle:hover {
+  opacity: 1;
+}
+
+/* Habit content */
+.habit-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.habit-text {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.habit-item.disabled .habit-text {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.habit-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* Habit actions */
+.habit-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.habit-action-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  transition: all var(--transition-fast);
+}
+
+.habit-action-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.habit-action-btn.toggle-btn:hover {
+  color: var(--accent-warning);
+}
+
+.habit-action-btn.delete-btn:hover {
+  color: var(--accent-danger);
+}
+
+/* Toggle visual state */
+.habit-toggle-indicator {
+  width: 36px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  position: relative;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.habit-toggle-indicator::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  top: 2px;
+  left: 2px;
+  transition: all var(--transition-fast);
+}
+
+.habit-toggle-indicator.active {
+  background: rgba(52, 211, 153, 0.2);
+  border-color: var(--accent-success);
+}
+
+.habit-toggle-indicator.active::after {
+  background: var(--accent-success);
+  left: 18px;
+  box-shadow: 0 0 8px var(--accent-success-glow);
+}
+
+/* Habits empty state */
+.habits-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.habits-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  opacity: 0.5;
+}
+
+.habits-empty h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.habits-empty p {
+  font-size: 0.8rem;
+  max-width: 260px;
+  margin: 0 auto;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
   .app-container {
